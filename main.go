@@ -17,6 +17,10 @@ import (
 	"github.com/liteldev/LeviLauncher/internal/vcruntime"
 )
 
+const (
+	progressUpdateInterval = 5 * 1024 * 1024 // 5MB
+)
+
 func main() {
 	if len(os.Args) < 2 {
 		showHelp()
@@ -192,7 +196,7 @@ func deriveFilename(rawURL string) string {
 		} else {
 			parts := strings.Split(u.Path, "/")
 			if len(parts) > 0 && parts[len(parts)-1] != "" {
-				fname = parts[len(parts)-1]
+				fname = ensureMsixvcFilename(parts[len(parts)-1])
 			}
 		}
 	}
@@ -297,7 +301,7 @@ func downloadFile(rawURL, destPath string) error {
 			downloaded += int64(n)
 			
 			// Print progress every 5MB
-			if downloaded-lastPrint >= 5*1024*1024 || downloaded == total {
+			if downloaded-lastPrint >= progressUpdateInterval || downloaded == total {
 				percentage := float64(downloaded) / float64(total) * 100
 				fmt.Printf("Progress: %.1f%% (%d/%d bytes)\n", percentage, downloaded, total)
 				lastPrint = downloaded
@@ -323,7 +327,10 @@ func installExtractMsixvc(ctx context.Context, name string, folderName string, i
 	inPath := n
 	if !filepath.IsAbs(inPath) {
 		if dir, err := utils.GetInstallerDir(); err == nil && dir != "" {
-			inPath += ".msixvc"
+			// Ensure the filename has .msixvc extension before joining
+			if !strings.HasSuffix(strings.ToLower(inPath), ".msixvc") {
+				inPath += ".msixvc"
+			}
 			inPath = filepath.Join(dir, inPath)
 		}
 	}
