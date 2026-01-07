@@ -69,12 +69,13 @@ Successfully downloaded and extracted version 1.21.50.07 to folder: 1.21.50.07
 After running the launcher, you'll find:
 
 ```
-%USERPROFILE%\AppData\Local\LeviLauncher\
-├── installers/          # Downloaded .msixvc files
-│   └── 1.21.50.07.msixvc
-└── versions/            # Extracted game files
-    └── 1.21.50.07/
-        └── Minecraft.Windows.exe
+launcher.exe location/
+├── data/                # Launcher data directory
+│   ├── installers/      # Downloaded .msixvc files
+│   │   └── 1.21.50.07.msixvc
+│   └── versions/        # Extracted game files
+│       └── 1.21.50.07/
+│           └── Minecraft.Windows.exe
 ```
 
 ## Error Handling
