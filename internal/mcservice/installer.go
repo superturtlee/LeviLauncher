@@ -26,7 +26,10 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	inPath := n
 	if !filepath.IsAbs(inPath) {
 		if dir, err := utils.GetInstallerDir(); err == nil && dir != "" {
-			inPath += ".msixvc"
+			// Ensure the filename has .msixvc extension before joining
+			if !strings.HasSuffix(strings.ToLower(inPath), ".msixvc") {
+				inPath += ".msixvc"
+			}
 			inPath = filepath.Join(dir, inPath)
 		}
 	}
