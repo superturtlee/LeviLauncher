@@ -72,22 +72,26 @@ func handleList() {
 	fmt.Println("======================================")
 
 	// Parse and display versions
-	if release, ok := versions["release"].([]interface{}); ok {
+	if release, ok := versions["releaseVersions"].([]interface{}); ok {
 		fmt.Println("\nRelease Versions:")
 		for _, v := range release {
 			if vmap, ok := v.(map[string]interface{}); ok {
 				if version, ok := vmap["version"].(string); ok {
+					// Strip "Release " prefix if present
+					version = strings.TrimPrefix(version, "Release ")
 					fmt.Printf("  - %s\n", version)
 				}
 			}
 		}
 	}
 
-	if preview, ok := versions["preview"].([]interface{}); ok {
+	if preview, ok := versions["previewVersions"].([]interface{}); ok {
 		fmt.Println("\nPreview Versions:")
 		for _, v := range preview {
 			if vmap, ok := v.(map[string]interface{}); ok {
 				if version, ok := vmap["version"].(string); ok {
+					// Strip "Preview " prefix if present
+					version = strings.TrimPrefix(version, "Preview ")
 					fmt.Printf("  - %s\n", version)
 				}
 			}
@@ -110,14 +114,21 @@ func handleDownload(version string) {
 	var found bool
 
 	// Search in release versions
-	if release, ok := versions["release"].([]interface{}); ok {
+	if release, ok := versions["releaseVersions"].([]interface{}); ok {
 		for _, v := range release {
 			if vmap, ok := v.(map[string]interface{}); ok {
-				if ver, ok := vmap["version"].(string); ok && ver == version {
-					if urlVal, ok := vmap["url"].(string); ok {
-						downloadURL = urlVal
-						found = true
-						break
+				if ver, ok := vmap["version"].(string); ok {
+					// Strip "Release " prefix for comparison
+					cleanVer := strings.TrimPrefix(ver, "Release ")
+					if cleanVer == version {
+						// Get first URL from urls array
+						if urls, ok := vmap["urls"].([]interface{}); ok && len(urls) > 0 {
+							if urlVal, ok := urls[0].(string); ok {
+								downloadURL = urlVal
+								found = true
+								break
+							}
+						}
 					}
 				}
 			}
@@ -126,15 +137,22 @@ func handleDownload(version string) {
 
 	// Search in preview versions if not found
 	if !found {
-		if preview, ok := versions["preview"].([]interface{}); ok {
+		if preview, ok := versions["previewVersions"].([]interface{}); ok {
 			for _, v := range preview {
 				if vmap, ok := v.(map[string]interface{}); ok {
-					if ver, ok := vmap["version"].(string); ok && ver == version {
-						if urlVal, ok := vmap["url"].(string); ok {
-							downloadURL = urlVal
-							versionType = "preview"
-							found = true
-							break
+					if ver, ok := vmap["version"].(string); ok {
+						// Strip "Preview " prefix for comparison
+						cleanVer := strings.TrimPrefix(ver, "Preview ")
+						if cleanVer == version {
+							// Get first URL from urls array
+							if urls, ok := vmap["urls"].([]interface{}); ok && len(urls) > 0 {
+								if urlVal, ok := urls[0].(string); ok {
+									downloadURL = urlVal
+									versionType = "preview"
+									found = true
+									break
+								}
+							}
 						}
 					}
 				}
