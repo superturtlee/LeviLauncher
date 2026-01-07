@@ -2,6 +2,7 @@ package mcservice
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,16 +37,26 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	if !utils.FileExists(inPath) {
 		return "ERR_MSIXVC_NOT_FOUND"
 	}
+	
+	// Log the actual file path being extracted
+	fmt.Printf("Extracting from: %s\n", inPath)
+	
 	vdir, err := utils.GetVersionsDir()
 	if err != nil || strings.TrimSpace(vdir) == "" {
 		return "ERR_ACCESS_VERSIONS_DIR"
 	}
 	outDir := filepath.Join(vdir, strings.TrimSpace(folderName))
+	
+	// Log the output directory
+	fmt.Printf("Extracting to: %s\n", outDir)
+	
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		return "ERR_CREATE_TARGET_DIR"
 	}
 
 	rc, msg := extractor.Get(inPath, outDir)
+	fmt.Printf("Extractor returned: code=%d, message=%s\n", rc, msg)
+	
 	if rc != 0 {
 		// CLI mode: errors are returned as string codes for the caller to handle and display
 		if strings.TrimSpace(msg) == "" {

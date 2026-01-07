@@ -212,7 +212,23 @@ func handleDownload(version string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("\nSuccessfully downloaded and extracted version %s to folder: %s\n", version, folderName)
+	// Verify extraction succeeded by checking if files exist
+	versionsDir, err := utils.GetVersionsDir()
+	if err != nil {
+		fmt.Printf("Warning: Could not verify extraction - failed to get versions directory: %v\n", err)
+	} else {
+		extractedPath := filepath.Join(versionsDir, folderName)
+		entries, err := os.ReadDir(extractedPath)
+		if err != nil {
+			fmt.Printf("Warning: Extraction reported success but directory is not accessible: %v\n", err)
+		} else if len(entries) == 0 {
+			fmt.Printf("Warning: Extraction reported success but no files were extracted to: %s\n", extractedPath)
+			fmt.Println("This may indicate a problem with the extractor or missing dependencies.")
+		} else {
+			fmt.Printf("\nSuccessfully downloaded and extracted version %s to folder: %s\n", version, folderName)
+			fmt.Printf("Extracted %d items\n", len(entries))
+		}
+	}
 }
 
 func deriveFilename(rawURL string) string {
