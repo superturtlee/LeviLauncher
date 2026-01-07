@@ -199,7 +199,16 @@ func handleDownload(version string) {
 	isPreview := versionType == "preview"
 	errMsg := installExtractMsixvc(ctx, filename, folderName, isPreview)
 	if errMsg != "" {
-		fmt.Printf("Failed to extract: %s\n", errMsg)
+		if errMsg == "ERR_MC_NOT_AUTHORIZED" {
+			fmt.Println("\nExtraction failed: Minecraft authorization required")
+			fmt.Println("This tool requires a valid Minecraft license to extract and register the game.")
+			fmt.Println("Please ensure you:")
+			fmt.Println("  1. Have purchased Minecraft Bedrock Edition")
+			fmt.Println("  2. Are logged into Windows with a Microsoft account that owns Minecraft")
+			fmt.Println("  3. Have previously installed Minecraft from the Microsoft Store at least once")
+		} else {
+			fmt.Printf("Failed to extract: %s\n", errMsg)
+		}
 		os.Exit(1)
 	}
 

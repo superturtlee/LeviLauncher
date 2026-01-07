@@ -18,6 +18,7 @@ This is a simplified version with only game download and extraction functionalit
 
 ## Scope
 - Targets Minecraft GDK (Windows). Requires a legitimate licensed game copy.
+- **Important**: You must own Minecraft Bedrock Edition and be logged into Windows with a Microsoft account that has the license. The tool uses Windows authentication to verify ownership during extraction.
 
 ## Features
 
@@ -26,6 +27,7 @@ This is a simplified version with only game download and extraction functionalit
 
 ## Requirements
 - OS: Windows 10/11
+- **Minecraft Bedrock Edition license** - Must be logged into Windows with a Microsoft account that owns the game
 - Go `1.24+` (for compilation only)
 
 ## Usage
