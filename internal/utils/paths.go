@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/liteldev/LeviLauncher/internal/config"
 )
 
 func LauncherDir() string {
@@ -18,10 +16,7 @@ func LauncherDir() string {
 }
 
 func BaseRoot() string {
-	if v := strings.TrimSpace(config.GetBaseRootOverride()); v != "" {
-		_ = os.MkdirAll(v, 0o755)
-		return v
-	}
+	// Simplified for CLI - no config override support
 	exeName := "levilauncher.exe"
 	if exe, err := os.Executable(); err == nil {
 		base := strings.TrimSpace(filepath.Base(exe))

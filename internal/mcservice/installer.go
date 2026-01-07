@@ -5,14 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/liteldev/LeviLauncher/internal/extractor"
-	"github.com/liteldev/LeviLauncher/internal/msixvc"
-	"github.com/liteldev/LeviLauncher/internal/types"
 	"github.com/liteldev/LeviLauncher/internal/utils"
 	"github.com/liteldev/LeviLauncher/internal/vcruntime"
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type VersionStatus struct {
@@ -21,12 +17,6 @@ type VersionStatus struct {
 	IsDownloaded bool   `json:"isDownloaded"`
 	Type         string `json:"type"`
 }
-
-func StartMsixvcDownload(ctx context.Context, url string) string {
-	return msixvc.StartDownload(ctx, url)
-}
-func ResumeMsixvcDownload() { msixvc.Resume() }
-func CancelMsixvcDownload() { msixvc.Cancel() }
 
 func InstallExtractMsixvc(ctx context.Context, name string, folderName string, isPreview bool) string {
 	n := strings.TrimSpace(name)
@@ -51,39 +41,10 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		return "ERR_CREATE_TARGET_DIR"
 	}
-	stopCh := make(chan struct{})
-	go func(dir string) {
-		ticker := time.NewTicker(300 * time.Millisecond)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				var totalBytes int64
-				var files int64
-				_ = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-					if err != nil {
-						return nil
-					}
-					if d.IsDir() {
-						return nil
-					}
-					if fi, e := os.Stat(path); e == nil {
-						totalBytes += fi.Size()
-						files++
-					}
-					return nil
-				})
-				application.Get().Event.Emit(EventExtractProgress, types.ExtractProgress{Dir: dir, Files: files, Bytes: totalBytes, Ts: time.Now().UnixMilli()})
-			case <-stopCh:
-				return
-			}
-		}
-	}(outDir)
 
 	rc, msg := extractor.Get(inPath, outDir)
-	close(stopCh)
 	if rc != 0 {
-		application.Get().Event.Emit(EventExtractError, msg)
+		// Error event removed for CLI mode
 		if strings.TrimSpace(msg) == "" {
 			msg = "ERR_APPX_INSTALL_FAILED"
 		}
@@ -94,7 +55,7 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	//_ = preloader.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.RunForVersion(ctx, outDir)
-	application.Get().Event.Emit(EventExtractDone, outDir)
+	// Success event removed for CLI mode
 	return ""
 }
 
