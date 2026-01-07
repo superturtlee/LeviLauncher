@@ -88,8 +88,9 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 	}
 	dest := filepath.Join(contentDir, "vcruntime140_1.dll")
 	tmp := dest + ".tmp"
+	// Return early if the VC runtime file is already present
+	// Note: This only checks for existence, not integrity
 	if _, err := os.Stat(dest); err == nil {
-		// File already exists
 		return
 	}
 	if _, err := os.Stat(tmp); err == nil {

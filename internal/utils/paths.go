@@ -15,8 +15,11 @@ func LauncherDir() string {
 	return filepath.Dir(exe)
 }
 
+// BaseRoot returns the base directory for storing launcher data.
+// In CLI mode, this always uses the default directory calculation based on the
+// executable name and system AppData/cache directories. Configuration override
+// support has been removed for simplicity.
 func BaseRoot() string {
-	// Simplified for CLI - no config override support
 	exeName := "levilauncher.exe"
 	if exe, err := os.Executable(); err == nil {
 		base := strings.TrimSpace(filepath.Base(exe))

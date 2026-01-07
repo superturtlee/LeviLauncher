@@ -44,7 +44,7 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 
 	rc, msg := extractor.Get(inPath, outDir)
 	if rc != 0 {
-		// Error event removed for CLI mode
+		// CLI mode: errors are returned as string codes for the caller to handle and display
 		if strings.TrimSpace(msg) == "" {
 			msg = "ERR_APPX_INSTALL_FAILED"
 		}
@@ -55,7 +55,7 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	//_ = preloader.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.RunForVersion(ctx, outDir)
-	// Success event removed for CLI mode
+	// CLI mode: success is indicated by returning an empty string
 	return ""
 }
 
