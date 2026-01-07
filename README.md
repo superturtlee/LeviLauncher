@@ -9,79 +9,53 @@
   <sup>🌐 Language: <b>English</b> • <a href="./README.zh-CN.md">中文</a></sup>
 </p>
 
-A desktop launcher for Minecraft Bedrock Edition (GDK) on Windows.
+A command-line tool for downloading Minecraft Bedrock Edition (GDK) on Windows.
 
-Supports installing, managing, and launching Release/Preview builds. Provides version isolation, content management (worlds/resource packs/behavior packs/skin packs), mod management, and world backup tools. Frontend uses React + Vite + Tailwind; backend uses Go with Wails v3.
+This is a simplified version with only game download and extraction functionality.
 
 ## Project Status
-- 🚧 Actively under development; features may be incomplete and unstable.
+- ✅ Simplified to CLI tool with all GUI features removed.
 
 ## Scope
 - Targets Minecraft GDK (Windows). Requires a legitimate licensed game copy.
 
-## Downloads
-- GitHub Releases: https://github.com/LiteLDev/LeviLauncher/releases
-- Lanzou Cloud: https://levimc.lanzoue.com/b016ke39hc (Password: `levi`)
-
-## Issue Reporting
-- Open issues at https://github.com/LiteLDev/LeviLauncher/issues
-- Include OS version, launcher version, repro steps, and logs/screenshots.
-
 ## Features
-- Version management: install, delete, rename, quick launch; supports Release and Preview.
-- Version isolation: redirect game data to `versions/<name>/Minecraft Bedrock (Preview)`, separate from AppData.
-- Content management: count and manage worlds/resource/behavior/skin packs; quick open and drag-and-drop import.
-- Mods: import `.zip`/`.dll`, enable/disable/delete; auto prepare dependencies and preloader.
-- World tools: backup to `.mcworld`, edit `level.dat` fields and world name.
-- Downloads & mirrors: built-in mirror latency test and selection; local installer import; progress view.
-- Shortcuts: create desktop shortcut for a version; custom icon support.
-- Updates: check, download, install updates; elevate when necessary.
-- Languages: English and Simplified Chinese.
+
+- ✅ Version list query: `launcher list` to get all available versions
+- ✅ Version download and extraction: `launcher download <version>` to download and auto-extract
 
 ## Requirements
-- OS: Windows 10/11.
-- Required components: Microsoft Gaming Services, Microsoft GameInput (guided on first run).
-- WebView2 Runtime: provided by installer or system.
-- Minecraft: You must own a legitimate licensed copy and have installed it at least once from Microsoft Store to use the launcher for installation.
+- OS: Windows 10/11
+- Go `1.24+` (for compilation only)
 
-## Quick Start (Dev)
-- Dependencies:
-  - Go `1.24+` (see `go.mod`).
-  - Node.js `18+` (for frontend).
-  - Wails v3 CLI: `go install github.com/wailsapp/wails/v3/cmd/wails3@latest`
-- Dev mode:
-  - From project root: `wails3 dev -config ./build/config.yml -port 1145`
-  - Or run frontend separately: `cd frontend && npm install && npm run dev`
-- Build:
-  - `wails3 task build`
-  - Windows specific: `wails3 task windows:build`
-- Run:
-  - `wails3 task run`
+## Usage
+
+### Build
+
+```bash
+go build -o launcher.exe main.go
+```
+
+### List Available Versions
+
+```bash
+launcher.exe list
+```
+
+### Download Specific Version
+
+```bash
+launcher.exe download 1.21.50.07
+```
+
+## Commands
+
+- `launcher list` - List all available Minecraft Bedrock versions (both release and preview)
+- `launcher download <version>` - Download and extract the specified version to the versions directory
 
 ## Structure
-- `frontend/`: React + Vite app (`package.json`, `src/`, `assets/locales/`).
-- `internal/`: backend logic (versions, content, update, registry, etc.).
-- `build/`: cross-platform packaging and Taskfiles.
-- `main.go`: entry point; embeds frontend assets and creates the window.
-
-## CLI Args
-- `--launch=<version_name>`: launch the specified version and exit.
-- `--self-update=<current_version>`: start elevated self-update when the install dir is not writable.
-
-## Community
-- Discord: `https://discord.gg/v5R5P4vRZk`
-- QQ Group: `458083875` (`https://qm.qq.com/q/1z791rJgJG`)
-
-## FAQ
-- Missing GameInput: install `GameInputRedist.msi` when prompted.
-- Missing Gaming Services: install via Microsoft Store.
-- Isolation & inherit: enable isolation during install; copy data from same-type isolated version or GDK directory.
-- Non-writable directory: change base content path in Settings or install/update with elevation.
-- Language switch: Settings supports English/zh-CN.
-
-## Contributing
-
-- PRs and issues are welcome.
+- `internal/`: Core functionality modules (download, extraction, version management)
+- `main.go`: CLI tool entry point
 
 ## License
 
