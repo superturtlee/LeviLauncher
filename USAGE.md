@@ -1,5 +1,14 @@
 # LeviLauncher CLI Usage Examples
 
+## Prerequisites
+
+Before using the launcher, ensure:
+1. You own Minecraft Bedrock Edition
+2. You're logged into Windows with a Microsoft account that has the Minecraft license
+3. You've installed Minecraft from the Microsoft Store at least once (this validates your license with Windows)
+
+The launcher verifies your Minecraft license during extraction using Windows authentication.
+
 ## Building the CLI Tool
 
 On Windows with Go 1.24+ installed:
@@ -69,12 +78,13 @@ Successfully downloaded and extracted version 1.21.50.07 to folder: 1.21.50.07
 After running the launcher, you'll find:
 
 ```
-%USERPROFILE%\AppData\Local\LeviLauncher\
-├── installers/          # Downloaded .msixvc files
-│   └── 1.21.50.07.msixvc
-└── versions/            # Extracted game files
-    └── 1.21.50.07/
-        └── Minecraft.Windows.exe
+launcher.exe location/
+├── data/                # Launcher data directory
+│   ├── installers/      # Downloaded .msixvc files
+│   │   └── 1.21.50.07.msixvc
+│   └── versions/        # Extracted game files
+│       └── 1.21.50.07/
+│           └── Minecraft.Windows.exe
 ```
 
 ## Error Handling
@@ -84,6 +94,16 @@ The tool will display helpful error messages:
 - If version not found:
   ```
   Version X.XX.XX.XX not found
+  ```
+
+- If Minecraft license not detected:
+  ```
+  Extraction failed: Minecraft authorization required
+  This tool requires a valid Minecraft license to extract and register the game.
+  Please ensure you:
+    1. Have purchased Minecraft Bedrock Edition
+    2. Are logged into Windows with a Microsoft account that owns Minecraft
+    3. Have previously installed Minecraft from the Microsoft Store at least once
   ```
 
 - If download fails:

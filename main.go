@@ -72,22 +72,26 @@ func handleList() {
 	fmt.Println("======================================")
 
 	// Parse and display versions
-	if release, ok := versions["release"].([]interface{}); ok {
+	if release, ok := versions["releaseVersions"].([]interface{}); ok {
 		fmt.Println("\nRelease Versions:")
 		for _, v := range release {
 			if vmap, ok := v.(map[string]interface{}); ok {
 				if version, ok := vmap["version"].(string); ok {
+					// Strip "Release " prefix if present
+					version = strings.TrimPrefix(version, "Release ")
 					fmt.Printf("  - %s\n", version)
 				}
 			}
 		}
 	}
 
-	if preview, ok := versions["preview"].([]interface{}); ok {
+	if preview, ok := versions["previewVersions"].([]interface{}); ok {
 		fmt.Println("\nPreview Versions:")
 		for _, v := range preview {
 			if vmap, ok := v.(map[string]interface{}); ok {
 				if version, ok := vmap["version"].(string); ok {
+					// Strip "Preview " prefix if present
+					version = strings.TrimPrefix(version, "Preview ")
 					fmt.Printf("  - %s\n", version)
 				}
 			}
@@ -110,14 +114,21 @@ func handleDownload(version string) {
 	var found bool
 
 	// Search in release versions
-	if release, ok := versions["release"].([]interface{}); ok {
+	if release, ok := versions["releaseVersions"].([]interface{}); ok {
 		for _, v := range release {
 			if vmap, ok := v.(map[string]interface{}); ok {
-				if ver, ok := vmap["version"].(string); ok && ver == version {
-					if urlVal, ok := vmap["url"].(string); ok {
-						downloadURL = urlVal
-						found = true
-						break
+				if ver, ok := vmap["version"].(string); ok {
+					// Strip "Release " prefix for comparison
+					cleanVer := strings.TrimPrefix(ver, "Release ")
+					if cleanVer == version {
+						// Get first URL from urls array
+						if urls, ok := vmap["urls"].([]interface{}); ok && len(urls) > 0 {
+							if urlVal, ok := urls[0].(string); ok {
+								downloadURL = urlVal
+								found = true
+								break
+							}
+						}
 					}
 				}
 			}
@@ -126,15 +137,22 @@ func handleDownload(version string) {
 
 	// Search in preview versions if not found
 	if !found {
-		if preview, ok := versions["preview"].([]interface{}); ok {
+		if preview, ok := versions["previewVersions"].([]interface{}); ok {
 			for _, v := range preview {
 				if vmap, ok := v.(map[string]interface{}); ok {
-					if ver, ok := vmap["version"].(string); ok && ver == version {
-						if urlVal, ok := vmap["url"].(string); ok {
-							downloadURL = urlVal
-							versionType = "preview"
-							found = true
-							break
+					if ver, ok := vmap["version"].(string); ok {
+						// Strip "Preview " prefix for comparison
+						cleanVer := strings.TrimPrefix(ver, "Preview ")
+						if cleanVer == version {
+							// Get first URL from urls array
+							if urls, ok := vmap["urls"].([]interface{}); ok && len(urls) > 0 {
+								if urlVal, ok := urls[0].(string); ok {
+									downloadURL = urlVal
+									versionType = "preview"
+									found = true
+									break
+								}
+							}
 						}
 					}
 				}
@@ -181,11 +199,36 @@ func handleDownload(version string) {
 	isPreview := versionType == "preview"
 	errMsg := installExtractMsixvc(ctx, filename, folderName, isPreview)
 	if errMsg != "" {
-		fmt.Printf("Failed to extract: %s\n", errMsg)
+		if errMsg == "ERR_MC_NOT_AUTHORIZED" {
+			fmt.Println("\nExtraction failed: Minecraft authorization required")
+			fmt.Println("This tool requires a valid Minecraft license to extract and register the game.")
+			fmt.Println("Please ensure you:")
+			fmt.Println("  1. Have purchased Minecraft Bedrock Edition")
+			fmt.Println("  2. Are logged into Windows with a Microsoft account that owns Minecraft")
+			fmt.Println("  3. Have previously installed Minecraft from the Microsoft Store at least once")
+		} else {
+			fmt.Printf("Failed to extract: %s\n", errMsg)
+		}
 		os.Exit(1)
 	}
 
-	fmt.Printf("\nSuccessfully downloaded and extracted version %s to folder: %s\n", version, folderName)
+	// Verify extraction succeeded by checking if files exist
+	versionsDir, err := utils.GetVersionsDir()
+	if err != nil {
+		fmt.Printf("Warning: Could not verify extraction - failed to get versions directory: %v\n", err)
+	} else {
+		extractedPath := filepath.Join(versionsDir, folderName)
+		entries, err := os.ReadDir(extractedPath)
+		if err != nil {
+			fmt.Printf("Warning: Extraction reported success but directory is not accessible: %v\n", err)
+		} else if len(entries) == 0 {
+			fmt.Printf("Warning: Extraction reported success but no files were extracted to: %s\n", extractedPath)
+			fmt.Println("This may indicate a problem with the extractor or missing dependencies.")
+		} else {
+			fmt.Printf("\nSuccessfully downloaded and extracted version %s to folder: %s\n", version, folderName)
+			fmt.Printf("Extracted %d items\n", len(entries))
+		}
+	}
 }
 
 func deriveFilename(rawURL string) string {

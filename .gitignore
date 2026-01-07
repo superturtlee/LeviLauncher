@@ -7,8 +7,6 @@
 *.so
 *.dylib
 
-!/internal/peeditor/PeEditor.exe
-
 # Test binary, built with `go test -c`
 *.test
 

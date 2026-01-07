@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/liteldev/LeviLauncher/internal/config"
 )
 
 func LauncherDir() string {
@@ -17,29 +15,11 @@ func LauncherDir() string {
 	return filepath.Dir(exe)
 }
 
+// BaseRoot returns the base directory for storing launcher data.
+// In CLI mode, uses a local ./data directory relative to the executable location.
 func BaseRoot() string {
-	if v := strings.TrimSpace(config.GetBaseRootOverride()); v != "" {
-		_ = os.MkdirAll(v, 0o755)
-		return v
-	}
-	exeName := "levilauncher.exe"
-	if exe, err := os.Executable(); err == nil {
-		base := strings.TrimSpace(filepath.Base(exe))
-		if base != "" {
-			exeName = strings.ToLower(base)
-		}
-	}
-	if ap := strings.TrimSpace(GetAppDataPath()); ap != "" {
-		root := filepath.Join(ap, exeName)
-		_ = os.MkdirAll(root, 0o755)
-		return root
-	}
-	if d, _ := os.UserCacheDir(); strings.TrimSpace(d) != "" {
-		root := filepath.Join(d, exeName)
-		_ = os.MkdirAll(root, 0o755)
-		return root
-	}
-	root := filepath.Join(LauncherDir(), exeName)
+	// Use ./data directory relative to the launcher location
+	root := filepath.Join(LauncherDir(), "data")
 	_ = os.MkdirAll(root, 0o755)
 	return root
 }

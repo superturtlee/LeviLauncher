@@ -29,9 +29,33 @@ func FetchHistoricalVersions(preferCN bool) map[string]interface{} {
 		urls = []string{gitcodeURL, proxyURL, githubURL}
 	}
 
+	// Test latencies and sort by fastest
+	log.Println("Testing server latencies...")
+	latencies := TestMirrorLatencies(urls, 3000)
+	
+	// Sort URLs by latency (fastest first), only include successful ones
+	var sortedURLs []string
+	for _, result := range latencies {
+		if ok, _ := result["ok"].(bool); ok {
+			if url, _ := result["url"].(string); url != "" {
+				latencyMs, _ := result["latencyMs"].(int64)
+				log.Printf("  %s: %dms", url, latencyMs)
+				sortedURLs = append(sortedURLs, url)
+			}
+		}
+	}
+	
+	// If no servers responded, fall back to original order
+	if len(sortedURLs) == 0 {
+		log.Println("All servers failed ping test, using default order")
+		sortedURLs = urls
+	} else {
+		log.Printf("Using fastest server: %s", sortedURLs[0])
+	}
+
 	client := &http.Client{Timeout: 5 * time.Second}
 	var lastErr error
-	for _, u := range urls {
+	for _, u := range sortedURLs {
 		req, err := http.NewRequest(http.MethodGet, u, nil)
 		if err != nil {
 			lastErr = err

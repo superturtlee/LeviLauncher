@@ -15,8 +15,6 @@ import (
 
 	"github.com/corpix/uarand"
 	"github.com/google/go-github/v30/github"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 const (
@@ -90,10 +88,9 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 	}
 	dest := filepath.Join(contentDir, "vcruntime140_1.dll")
 	tmp := dest + ".tmp"
+	// Return early if the VC runtime file is already present
+	// Note: This only checks for existence, not integrity
 	if _, err := os.Stat(dest); err == nil {
-		application.Get().Event.Emit(EventEnsureStart, struct{}{})
-		application.Get().Event.Emit(EventEnsureDone, true)
-
 		return
 	}
 	if _, err := os.Stat(tmp); err == nil {
@@ -104,8 +101,6 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 					if _, e3 := io.Copy(out, in); e3 == nil {
 						out.Close()
 						_ = os.Remove(tmp)
-						application.Get().Event.Emit(EventEnsureStart, struct{}{})
-						application.Get().Event.Emit(EventEnsureDone, true)
 						return
 					}
 					out.Close()
@@ -113,12 +108,9 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 				}
 			}
 		} else {
-			application.Get().Event.Emit(EventEnsureStart, struct{}{})
-			application.Get().Event.Emit(EventEnsureDone, true)
 			return
 		}
 	}
-	application.Get().Event.Emit(EventEnsureStart, struct{}{})
 	c, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	var downloadURL string
@@ -140,28 +132,23 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 	req, err := http.NewRequestWithContext(c, "GET", downloadURL, nil)
 	if err != nil {
 		log.Printf("vcruntime.EnsureLatest: 构造请求失败: %v", err)
-		application.Get().Event.Emit(EventEnsureDone, false)
 		return
 	}
 	req.Header.Set("User-Agent", uarand.GetRandom())
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("vcruntime.EnsureLatest: 请求失败: %v", err)
-		application.Get().Event.Emit(EventEnsureDone, false)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("vcruntime.EnsureLatest: HTTP %s", resp.Status)
-		application.Get().Event.Emit(EventEnsureDone, false)
 		return
 	}
-	application.Get().Event.Emit(EventEnsureProgress, EnsureProgress{Downloaded: 0, Total: resp.ContentLength})
 	_ = os.Remove(tmp)
 	f, err := os.Create(tmp)
 	if err != nil {
 		log.Printf("vcruntime.EnsureLatest: 创建文件失败: %v", err)
-		application.Get().Event.Emit(EventEnsureDone, false)
 		return
 	}
 	defer f.Close()
@@ -172,18 +159,15 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 		if n > 0 {
 			if _, werr := f.Write(buf[:n]); werr != nil {
 				log.Printf("vcruntime.EnsureLatest: 写入失败: %v", werr)
-				application.Get().Event.Emit(EventEnsureDone, false)
 				return
 			}
 			downloaded += int64(n)
-			application.Get().Event.Emit(EventEnsureProgress, EnsureProgress{Downloaded: downloaded, Total: resp.ContentLength})
 		}
 		if rerr == io.EOF {
 			break
 		}
 		if rerr != nil {
 			log.Printf("vcruntime.EnsureLatest: 读取失败: %v", rerr)
-			application.Get().Event.Emit(EventEnsureDone, false)
 			return
 		}
 	}
@@ -196,7 +180,6 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 					out.Close()
 					_ = os.Remove(tmp)
 					log.Printf("vcruntime.EnsureLatest: 复制回退成功: %s", dest)
-					application.Get().Event.Emit(EventEnsureDone, true)
 					return
 				}
 				out.Close()
@@ -204,11 +187,9 @@ func EnsureLatest(ctx context.Context, contentDir string) {
 			}
 		}
 		_ = os.Remove(tmp)
-		application.Get().Event.Emit(EventEnsureDone, false)
 		return
 	}
 	log.Printf("vcruntime.EnsureLatest: 已下载 vcruntime140_1.dll 到 %s", dest)
-	application.Get().Event.Emit(EventEnsureDone, true)
 }
 
 func EnsureEmbedded(contentDir string, embedded []byte) {

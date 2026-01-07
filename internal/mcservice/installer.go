@@ -2,17 +2,14 @@ package mcservice
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/liteldev/LeviLauncher/internal/extractor"
-	"github.com/liteldev/LeviLauncher/internal/msixvc"
-	"github.com/liteldev/LeviLauncher/internal/types"
 	"github.com/liteldev/LeviLauncher/internal/utils"
 	"github.com/liteldev/LeviLauncher/internal/vcruntime"
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type VersionStatus struct {
@@ -22,12 +19,6 @@ type VersionStatus struct {
 	Type         string `json:"type"`
 }
 
-func StartMsixvcDownload(ctx context.Context, url string) string {
-	return msixvc.StartDownload(ctx, url)
-}
-func ResumeMsixvcDownload() { msixvc.Resume() }
-func CancelMsixvcDownload() { msixvc.Cancel() }
-
 func InstallExtractMsixvc(ctx context.Context, name string, folderName string, isPreview bool) string {
 	n := strings.TrimSpace(name)
 	if n == "" {
@@ -36,54 +27,38 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	inPath := n
 	if !filepath.IsAbs(inPath) {
 		if dir, err := utils.GetInstallerDir(); err == nil && dir != "" {
-			inPath += ".msixvc"
+			// Ensure the filename has .msixvc extension before joining
+			if !strings.HasSuffix(strings.ToLower(inPath), ".msixvc") {
+				inPath += ".msixvc"
+			}
 			inPath = filepath.Join(dir, inPath)
 		}
 	}
 	if !utils.FileExists(inPath) {
 		return "ERR_MSIXVC_NOT_FOUND"
 	}
+	
+	// Log the actual file path being extracted
+	fmt.Printf("Extracting from: %s\n", inPath)
+	
 	vdir, err := utils.GetVersionsDir()
 	if err != nil || strings.TrimSpace(vdir) == "" {
 		return "ERR_ACCESS_VERSIONS_DIR"
 	}
 	outDir := filepath.Join(vdir, strings.TrimSpace(folderName))
+	
+	// Log the output directory
+	fmt.Printf("Extracting to: %s\n", outDir)
+	
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		return "ERR_CREATE_TARGET_DIR"
 	}
-	stopCh := make(chan struct{})
-	go func(dir string) {
-		ticker := time.NewTicker(300 * time.Millisecond)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				var totalBytes int64
-				var files int64
-				_ = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-					if err != nil {
-						return nil
-					}
-					if d.IsDir() {
-						return nil
-					}
-					if fi, e := os.Stat(path); e == nil {
-						totalBytes += fi.Size()
-						files++
-					}
-					return nil
-				})
-				application.Get().Event.Emit(EventExtractProgress, types.ExtractProgress{Dir: dir, Files: files, Bytes: totalBytes, Ts: time.Now().UnixMilli()})
-			case <-stopCh:
-				return
-			}
-		}
-	}(outDir)
 
 	rc, msg := extractor.Get(inPath, outDir)
-	close(stopCh)
+	fmt.Printf("Extractor returned: code=%d, message=%s\n", rc, msg)
+	
 	if rc != 0 {
-		application.Get().Event.Emit(EventExtractError, msg)
+		// CLI mode: errors are returned as string codes for the caller to handle and display
 		if strings.TrimSpace(msg) == "" {
 			msg = "ERR_APPX_INSTALL_FAILED"
 		}
@@ -94,7 +69,7 @@ func InstallExtractMsixvc(ctx context.Context, name string, folderName string, i
 	//_ = preloader.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.EnsureForVersion(ctx, outDir)
 	//_ = peeditor.RunForVersion(ctx, outDir)
-	application.Get().Event.Emit(EventExtractDone, outDir)
+	// CLI mode: success is indicated by returning an empty string
 	return ""
 }
 
